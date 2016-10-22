@@ -13,7 +13,7 @@ nb_validation_samples = 400
 nb_epoch = 20
 
 # path to the model weights file.
-weights_path = '../keras/examples/vgg16_weights.h5'
+weights_path = 'vgg16_weights.h5'
 top_model_weights_path = 'bottleneck_fc_model.h5'
 # dimensions of our images.
 img_width, img_height = 150, 150
