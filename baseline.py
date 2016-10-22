@@ -1,1 +1,0 @@
-data_directory, model_file_prefix = sys.argv[1:]
