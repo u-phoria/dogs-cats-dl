@@ -3,7 +3,7 @@ import h5py
 from keras.applications import InceptionV3
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Model, Sequential
-from keras.layers import GlobalAveragePooling2D, ZeroPadding2D, Convolution2D, MaxPooling2D, Flatten, Dropout
+from keras.layers import GlobalAveragePooling2D, ZeroPadding2D, Convolution2D, MaxPooling2D, Flatten, Dropout, K
 from keras.layers import Dense
 
 train_dir, test_dir, model_file_prefix = sys.argv[1:]
@@ -15,6 +15,7 @@ nb_epoch = 20
 # path to the model weights file.
 weights_path = 'vgg16_weights.h5'
 top_model_weights_path = 'bottleneck_fc_model.h5'
+
 # dimensions of our images.
 img_width, img_height = 150, 150
 input_shape = (img_width, img_height, 3)
@@ -73,7 +74,10 @@ def save_bottlebeck_features():
             break
         g = f['layer_{}'.format(k)]
         weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
-        model.layers[k].set_weights(weights)
+        layer = model.layers[k]
+        if K.image_dim_ordering() == 'tf' and layer.__class__.__name__ in ['Convolution1D', 'Convolution2D', 'Convolution3D', 'AtrousConvolution2D']:
+            weights[0] = np.transpose(weights[0], (2,3,1,0)) #convert_kernel(weights[0])
+        layer.set_weights(weights)#converted_w)
     f.close()
     print('Model loaded.')
 
@@ -83,9 +87,11 @@ def save_bottlebeck_features():
             batch_size=32,
             class_mode=None,
             shuffle=False)
+    print 'starting pred train'
     bottleneck_features_train = model.predict_generator(generator, nb_train_samples)
     np.save(open('bottleneck_features_train.npy', 'w'), bottleneck_features_train)
 
+    print 'starting pred test'
     generator = datagen.flow_from_directory(
             test_dir,
             target_size=(img_width, img_height),
