@@ -12,6 +12,9 @@ nb_train_samples = 2000
 nb_validation_samples = 400
 nb_epoch = 20
 
+# has to match 
+pred_batch_size = 16
+
 # path to the model weights file.
 weights_path = 'vgg16_weights.h5'
 top_model_weights_path = 'bottleneck_fc_model.h5'
@@ -80,24 +83,25 @@ def save_bottlebeck_features():
         layer.set_weights(weights)#converted_w)
     f.close()
     print('Model loaded.')
+    model.summary()
 
     generator = datagen.flow_from_directory(
             train_dir,
             target_size=(img_width, img_height),
-            batch_size=32,
+            batch_size=16,
             class_mode=None,
             shuffle=False)
     print 'starting pred train'
     bottleneck_features_train = model.predict_generator(generator, nb_train_samples)
     np.save(open('bottleneck_features_train.npy', 'w'), bottleneck_features_train)
 
-    print 'starting pred test'
     generator = datagen.flow_from_directory(
             test_dir,
             target_size=(img_width, img_height),
-            batch_size=32,
+            batch_size=16,
             class_mode=None,
             shuffle=False)
+    print 'starting pred test'
     bottleneck_features_validation = model.predict_generator(generator, nb_validation_samples)
     np.save(open('bottleneck_features_validation.npy', 'w'), bottleneck_features_validation)
 
