@@ -9,10 +9,10 @@ from keras.layers import Dense
 train_dir, test_dir, model_file_prefix = sys.argv[1:]
 
 nb_train_samples = 2000
-nb_validation_samples = 400
-nb_epoch = 20
+nb_validation_samples = 800
+nb_epoch = 50
 
-# has to match 
+# has to match
 pred_batch_size = 16
 
 # path to the model weights file.
