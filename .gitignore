@@ -1,1 +1,6 @@
 .idea
+train
+test
+val
+*.npy
+*.h5
