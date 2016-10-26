@@ -7,7 +7,8 @@ from keras.models import Model, Sequential
 from keras.layers import GlobalAveragePooling2D, ZeroPadding2D, Convolution2D, MaxPooling2D, Flatten, Dropout, K
 from keras.layers import Dense
 
-train_dir, validation_dir = sys.argv[1:]
+train_dir, validation_dir, cmd = sys.argv[1:]
+assert cmd in ['init', 'finetune']
 
 nb_epoch = 50
 
@@ -126,10 +127,10 @@ def build_classifier_top_model(input_shape):
 
 def train_top_model():
     train_data = np.load(open('bottleneck_features_train.npy'))
-    train_labels = np.array([0] * (nb_train_samples / 2) + [1] * (nb_train_samples / 2))
+    train_labels = np.array([0] * (train_data.shape[0] / 2) + [1] * (train_data.shape[0]/ 2))
 
     validation_data = np.load(open('bottleneck_features_validation.npy'))
-    validation_labels = np.array([0] * (nb_validation_samples / 2) + [1] * (nb_validation_samples / 2))
+    validation_labels = np.array([0] * (validation_data.shape[0] / 2) + [1] * (validation_data.shape[0] / 2))
 
     model = build_classifier_top_model(train_data.shape[1:])
 
@@ -165,33 +166,35 @@ def finetune_top_model(train_data_dir, validation_data_dir):
 
     # prepare data augmentation configuration
     train_datagen = ImageDataGenerator(
-        rescale=1. / 255,
+        rescale=1./255,
         shear_range=0.2,
         zoom_range=0.2,
         horizontal_flip=True)
 
-    test_datagen = ImageDataGenerator(rescale=1. / 255)
+    test_datagen = ImageDataGenerator(rescale=1./255)
 
     train_generator = train_datagen.flow_from_directory(
         train_data_dir,
-        target_size=(img_height, img_width),
+        target_size=(img_width, img_height),
         batch_size=32,
         class_mode='binary')
 
     validation_generator = test_datagen.flow_from_directory(
         validation_data_dir,
-        target_size=(img_height, img_width),
+        target_size=(img_width, img_height),
         batch_size=32,
         class_mode='binary')
 
     # fine-tune the model
     model.fit_generator(
         train_generator,
-        samples_per_epoch=nb_train_samples,
+        samples_per_epoch=train_generator.nb_sample,
         nb_epoch=nb_epoch,
         validation_data=validation_generator,
-        nb_val_samples=nb_validation_samples)
+        nb_val_samples=validation_generator.nb_sample)
 
-save_bottlebeck_features(train_dir, validation_dir)
-train_top_model()
-finetune_top_model(train_dir, validation_dir)
+if cmd == 'init':
+    #save_bottlebeck_features(train_dir, validation_dir)
+    train_top_model()
+if cmd == 'finetune':
+    finetune_top_model(train_dir, validation_dir)
