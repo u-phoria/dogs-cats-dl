@@ -65,6 +65,12 @@ if __name__ == "__main__":
     (pred_filename,) = sys.argv[1:]
 
     im = cv2.resize(cv2.imread(pred_filename), (224, 224)).astype(np.float32)
+    #im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+    # import matplotlib.pyplot as plt
+    # plt.imshow(im*1/255.0)
+    # plt.show()
+
     im[:,:,0] -= 103.939
     im[:,:,1] -= 116.779
     im[:,:,2] -= 123.68
@@ -76,6 +82,7 @@ if __name__ == "__main__":
     sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd, loss='categorical_crossentropy')
     out = model.predict(im)[0]
+
     best = np.argsort(out)[::-1][:5]
     for i in best:
         print label_index[i], out[i]
