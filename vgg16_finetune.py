@@ -148,10 +148,10 @@ def finetune_top_model(train_dir, validation_dir, nb_epoch=50, batch_size=32):
     # prepare data augmentation configuration
     train_datagen = ImageDataGenerator(
         rescale=1.,
-        featurewise_center=True)
-        # shear_range=0.2,
-        # zoom_range=0.2,
-        # horizontal_flip=True)
+        featurewise_center=True,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True)
     train_datagen.mean = np.array([103.939, 116.779, 123.68], dtype=np.float32).reshape(1, 1, 3)
 
     test_datagen = ImageDataGenerator(
