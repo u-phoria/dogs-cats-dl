@@ -1,58 +1,51 @@
-import cv2
-import numpy as np
 import sys
 
+import cv2
+import numpy as np
 from keras import optimizers
 from keras.applications import VGG16
 from keras.engine import Input
 from keras.engine import Model
-from keras.layers import Dense, K
+from keras.layers import Dense
 from keras.layers import Flatten, Dropout
 from keras.models import Sequential
-from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
-
 
 img_width, img_height = 150, 150    #224, 224
 top_model_weights_path = 'bottleneck_fc_model.h5'
 finetuned_model_weights_path = 'finetuned_model.h5'
 
 
-def save_bottleneck_features(train_dir, validation_dir, pred_batch_size=32):
-    datagen = ImageDataGenerator(rescale=1., featurewise_center=True)
-    datagen.mean = np.array([103.939, 116.779, 123.68], dtype=np.float32).reshape(1, 1, 3)
-
-    # print 'starting pred train'
-    # bottleneck_features_train = model.predict(X_train, batch_size=32, verbose=1)
-    # np.save(open('bottleneck_features_train.npy', 'w'), bottleneck_features_train)
-    #
-    # print 'starting pred val'
-    # bottleneck_features_validation = model.predict(X_val, batch_size=32, verbose=1)
-    # np.save(open('bottleneck_features_validation.npy', 'w'), bottleneck_features_validation)
+#def save_bottleneck_features(train_dir, validation_dir, pred_batch_size=32):
+def save_bottleneck_features(X_train, X_val, pred_batch_size=32):
+    #datagen = ImageDataGenerator(rescale=1., featurewise_center=True)
+    #datagen.mean = np.array([103.939, 116.779, 123.68], dtype=np.float32).reshape(1, 1, 3)
 
     model = VGG16(weights='imagenet', include_top=False)
-
-    print('Model loaded and weights applied.')
     model.summary()
 
-    generator = datagen.flow_from_directory(
-            train_dir,
-            target_size=(img_width, img_height),
-            batch_size=pred_batch_size,
-            class_mode=None,
-            shuffle=False)
     print 'starting pred train'
-    bottleneck_features_train = model.predict_generator(generator, generator.nb_sample)
+    # generator = datagen.flow_from_directory(
+    #         train_dir,
+    #         target_size=(img_width, img_height),
+    #         batch_size=pred_batch_size,
+    #         class_mode=None,
+    #         shuffle=False)
+    #bottleneck_features_train = model.predict_generator(generator, generator.nb_sample)
+
+    bottleneck_features_train = model.predict(X_train, batch_size=pred_batch_size, verbose=1)
     np.save(open('bottleneck_features_train.npy', 'w'), bottleneck_features_train)
 
-    generator = datagen.flow_from_directory(
-            validation_dir,
-            target_size=(img_width, img_height),
-            batch_size=pred_batch_size,
-            class_mode=None,
-            shuffle=False)
     print 'starting pred test'
-    bottleneck_features_validation = model.predict_generator(generator, generator.nb_sample)
+    # generator = datagen.flow_from_directory(
+    #         validation_dir,
+    #         target_size=(img_width, img_height),
+    #         batch_size=pred_batch_size,
+    #         class_mode=None,
+    #         shuffle=False)
+    # bottleneck_features_validation = model.predict_generator(generator, generator.nb_sample)
+
+    bottleneck_features_validation = model.predict(X_val, batch_size=pred_batch_size, verbose=1)
     np.save(open('bottleneck_features_validation.npy', 'w'), bottleneck_features_validation)
 
 
@@ -83,41 +76,40 @@ def create_top_model_layers(inp, layers):
     return out
 
 
-def train_top_model(nb_epoch=50):
-    # X_train_bn = np.load(open('bottleneck_features_train.npy'))
-    #
-    # X_val_bn = np.load(open('bottleneck_features_validation.npy'))
-    #
-    # model = build_classifier_top_model(X_train_bn.shape[1:])
-    #
-    # model.compile(optimizer='rmsprop',
-    #               loss='binary_crossentropy',
-    #               metrics=['accuracy'])
-    #
-    # model.fit(X_train_bn, y_train,
-    #           nb_epoch=nb_epoch, batch_size=32,
-    #           validation_data=(X_val_bn, y_val))
-    #
-    # model.save_weights(top_model_weights_path)
+# def train_top_model(nb_epoch=50):
+def train_top_model(y_train, y_val, nb_epoch=50):
+    X_train_bn = np.load(open('bottleneck_features_train.npy'))
+    X_val_bn = np.load(open('bottleneck_features_validation.npy'))
 
-    train_data = np.load(open('bottleneck_features_train.npy'))
-    train_labels = np.array([0] * (train_data.shape[0] / 2) + [1] * (train_data.shape[0]/ 2))
-
-    validation_data = np.load(open('bottleneck_features_validation.npy'))
-    validation_labels = np.array([0] * (validation_data.shape[0] / 2) + [1] * (validation_data.shape[0] / 2))
-
-    print 'input shape', train_data.shape[1:]
-    model = create_top_model(train_data.shape[1:])
+    model = create_top_model(X_train_bn.shape[1:])
 
     model.compile(optimizer='rmsprop',
                   loss='binary_crossentropy',
                   metrics=['accuracy'])
 
-    model.fit(train_data, train_labels,
+    model.fit(X_train_bn, y_train,
               nb_epoch=nb_epoch, batch_size=32,
-              validation_data=(validation_data, validation_labels))
+              validation_data=(X_val_bn, y_val))
 
     model.save_weights(top_model_weights_path)
+
+    # train_data = np.load(open('bottleneck_features_train.npy'))
+    # train_labels = np.array([0] * (train_data.shape[0] / 2) + [1] * (train_data.shape[0]/ 2))
+    #
+    # validation_data = np.load(open('bottleneck_features_validation.npy'))
+    # validation_labels = np.array([0] * (validation_data.shape[0] / 2) + [1] * (validation_data.shape[0] / 2))
+    #
+    # model = create_top_model(train_data.shape[1:])
+    #
+    # model.compile(optimizer='rmsprop',
+    #               loss='binary_crossentropy',
+    #               metrics=['accuracy'])
+    #
+    # model.fit(train_data, train_labels,
+    #           nb_epoch=nb_epoch, batch_size=32,
+    #           validation_data=(validation_data, validation_labels))
+    #
+    # model.save_weights(top_model_weights_path)
 
 
 def finetune_top_model(train_dir, validation_dir, nb_epoch=50, batch_size=32):
@@ -210,22 +202,34 @@ def predict(image_path):
     print out
 
 if __name__ == "__main__":
-    # print 'load train'
-    # X_train, y_train, _ = dataset.dataset(train_dir, img_width, img_height,
-    #                                       preprocess_fn=preprocess_input)
-    #
-    # print 'load val'
-    # X_val, y_val, _ = dataset.dataset(validation_dir, img_width, img_height,
-    #                                   preprocess_fn=preprocess_input)
+    import dataset
+    from keras.applications.imagenet_utils import preprocess_input
 
     cmd = sys.argv[1]
-    if cmd == 'init':
+    # if cmd == 'init':
+    #     train_dir, validation_dir = sys.argv[2:]
+    #     save_bottleneck_features(train_dir, validation_dir)
+    #     train_top_model()
+    # elif cmd == 'finetune':
+    #     train_dir, validation_dir = sys.argv[2:]
+    #     finetune_top_model(train_dir, validation_dir)
+
+    if cmd in ['init', 'finetune']:
         train_dir, validation_dir = sys.argv[2:]
-        save_bottleneck_features(train_dir, validation_dir)
-        train_top_model()
-    elif cmd == 'finetune':
-        train_dir, validation_dir = sys.argv[2:]
-        finetune_top_model(train_dir, validation_dir)
+
+        print 'load train'
+        X_train, y_train, _ = dataset.dataset(train_dir, img_width, img_height,
+                                              preprocess_fn=preprocess_input)
+
+        print 'load val'
+        X_val, y_val, _ = dataset.dataset(validation_dir, img_width, img_height,
+                                          preprocess_fn=preprocess_input)
+
+        if cmd == 'init':
+            save_bottleneck_features(X_train, X_val)
+            train_top_model(y_train, y_val)
+        elif cmd == 'finetune':
+            finetune_top_model(train_dir, validation_dir)
     elif cmd == 'pred':
         image_path = sys.argv[2]
         predict(image_path)

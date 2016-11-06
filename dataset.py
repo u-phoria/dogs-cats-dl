@@ -5,14 +5,14 @@ import numpy as np
 import scipy.misc
 
 
-def reverse_preprocess_input(x0):
-    x = x0 / 2.0
-    x += 0.5
-    x *= 255.
-    return x
+# def reverse_preprocess_input(x0):
+#     x = x0 / 2.0
+#     x += 0.5
+#     x *= 255.
+#     return x
 
 
-def dataset(base_dir, n):
+def dataset(base_dir, w, h, preprocess_fn=None):
     d = defaultdict(list)
     for root, subdirs, files in os.walk(base_dir):
         for filename in files:
@@ -38,6 +38,7 @@ def dataset(base_dir, n):
             img = scipy.misc.imread(filename)
             height, width, chan = img.shape
             assert chan == 3
+
 #            aspect_ratio = float(max((height, width))) / min((height, width))
 #            if aspect_ratio > 2:
 #                continue
@@ -46,7 +47,7 @@ def dataset(base_dir, n):
 #            centerx = width // 2
 #            radius = min((centerx, centery))
 #            img = img[centery-radius:centery+radius, centerx-radius:centerx+radius]
-            img = scipy.misc.imresize(img, size=(n, n), interp='bilinear')
+            img = scipy.misc.imresize(img, size=(w, h), interp='bilinear')
             X.append(img)
             y.append(class_index)
             useful_image_count += 1
@@ -54,7 +55,8 @@ def dataset(base_dir, n):
 
     X = np.array(X).astype(np.float32)
 #    X = X.transpose((0, 3, 1, 2))
-#    X = preprocess_input(X)
+    if preprocess_fn:
+        X = preprocess_fn(X)
     y = np.array(y)
 
     perm = np.random.permutation(len(y))
