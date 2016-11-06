@@ -13,6 +13,7 @@ from keras.preprocessing.image import ImageDataGenerator
 
 img_width, img_height = 150, 150    #224, 224
 top_model_weights_path = 'bottleneck_fc_model.h5'
+finetuned_model_weights_path = 'finetuned_model.h5'
 
 
 def save_bottleneck_features(train_dir, validation_dir, pred_batch_size=32):
@@ -178,6 +179,7 @@ def finetune_top_model(train_dir, validation_dir, nb_epoch=50, batch_size=32):
         validation_data=validation_generator,
         nb_val_samples=validation_generator.nb_sample)
 
+    model.save_weights(finetuned_model_weights_path)
 
 if __name__ == "__main__":
     # print 'load train'
