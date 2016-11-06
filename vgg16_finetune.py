@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 import sys
 
@@ -8,6 +9,7 @@ from keras.engine import Model
 from keras.layers import Dense, K
 from keras.layers import Flatten, Dropout
 from keras.models import Sequential
+from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
 
 
@@ -181,6 +183,32 @@ def finetune_top_model(train_dir, validation_dir, nb_epoch=50, batch_size=32):
 
     model.save_weights(finetuned_model_weights_path)
 
+
+def predict(image_path):
+    # Test pretrained model
+    vgg_model = VGG16(weights=None, include_top=False, input_tensor=Input(shape=(img_width,img_height,3)))
+    top_model = create_top_model(vgg_model.output_shape[1:])
+    out = create_top_model_layers(vgg_model.output, top_model.layers)
+    # print out.output
+    model = Model(vgg_model.input, out)
+    model.load_weights(finetuned_model_weights_path)
+
+    im = cv2.resize(cv2.imread(image_path), (img_width, img_height)).astype(np.float32)
+    #im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+    # import matplotlib.pyplot as plt
+    # plt.imshow(im*1/255.0)
+    # plt.show()
+
+    im[:, :, 0] -= 103.939
+    im[:, :, 1] -= 116.779
+    im[:, :, 2] -= 123.68
+    #im = im.transpose((2, 0, 1))
+    im = np.expand_dims(im, axis=0)
+
+    out = model.predict(im)[0]
+    print out
+
 if __name__ == "__main__":
     # print 'load train'
     # X_train, y_train, _ = dataset.dataset(train_dir, img_width, img_height,
@@ -199,7 +227,7 @@ if __name__ == "__main__":
         train_dir, validation_dir = sys.argv[2:]
         finetune_top_model(train_dir, validation_dir)
     elif cmd == 'pred':
-        pred_file = sys.argv[2]
-        pass
+        image_path = sys.argv[2]
+        predict(image_path)
     else:
         raise Exception('unknown command ' + cmd)
