@@ -190,11 +190,16 @@ if __name__ == "__main__":
     # X_val, y_val, _ = dataset.dataset(validation_dir, img_width, img_height,
     #                                   preprocess_fn=preprocess_input)
 
-    train_dir, validation_dir, cmd = sys.argv[1:]
-    assert cmd in ['init', 'finetune']
-
+    cmd = sys.argv[1]
     if cmd == 'init':
+        train_dir, validation_dir = sys.argv[2:]
         save_bottleneck_features(train_dir, validation_dir)
         train_top_model()
-    if cmd == 'finetune':
-       finetune_top_model(train_dir, validation_dir)
+    elif cmd == 'finetune':
+        train_dir, validation_dir = sys.argv[2:]
+        finetune_top_model(train_dir, validation_dir)
+    elif cmd == 'pred':
+        pred_file = sys.argv[2]
+        pass
+    else:
+        raise Exception('unknown command ' + cmd)
