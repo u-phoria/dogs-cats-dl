@@ -145,6 +145,8 @@ def finetune_top_model(train_dir, validation_dir, nb_epoch=50, batch_size=32):
         featurewise_center=True,
         shear_range=0.2,
         zoom_range=0.2,
+        rotation_range=30.,
+        channel_shift_range=0.1,
         horizontal_flip=True)
     train_datagen.mean = np.array([103.939, 116.779, 123.68], dtype=np.float32).reshape(1, 1, 3)
 
