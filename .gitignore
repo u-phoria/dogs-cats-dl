@@ -3,4 +3,5 @@ train
 test
 val
 *.npy
+*.pyc
 *.h5
