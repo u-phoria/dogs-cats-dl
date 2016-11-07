@@ -188,7 +188,7 @@ def predict(image_path):
     model.load_weights(finetuned_model_weights_path)
 
     im = cv2.resize(cv2.imread(image_path), (img_width, img_height)).astype(np.float32)
-    #im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
     # import matplotlib.pyplot as plt
     # plt.imshow(im*1/255.0)
