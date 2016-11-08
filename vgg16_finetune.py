@@ -11,7 +11,7 @@ from keras.layers import Flatten, Dropout
 from keras.models import Sequential
 from keras.preprocessing.image import ImageDataGenerator
 
-img_width, img_height = 150, 150    #224, 224
+img_width, img_height = 224, 224
 top_model_weights_path = 'bottleneck_fc_model.h5'
 finetuned_model_weights_path = 'finetuned_model.h5'
 
