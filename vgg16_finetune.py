@@ -1,6 +1,5 @@
 import sys
 
-import cv2
 import numpy as np
 from keras import optimizers
 from keras.applications import VGG16
@@ -179,16 +178,14 @@ def finetune_top_model(train_dir, validation_dir, nb_epoch=50, batch_size=32):
 
 
 def predict(image_path):
-    # Test pretrained model
-    vgg_model = VGG16(weights=None, include_top=False, input_tensor=Input(shape=(img_width,img_height,3)))
-    top_model = create_top_model(vgg_model.output_shape[1:])
-    out = create_top_model_layers(vgg_model.output, top_model.layers)
-    # print out.output
-    model = Model(vgg_model.input, out)
-    model.load_weights(finetuned_model_weights_path)
+    from PIL import Image
+    im = np.array(
+            Image.open(image_path) \
+                .convert('RGB') \
+                .resize((img_width, img_height))) \
+                .astype(np.float32)
 
-    im = cv2.resize(cv2.imread(image_path), (img_width, img_height)).astype(np.float32)
-    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    im = im[:,:,::-1] # RGB to BGR
 
     # import matplotlib.pyplot as plt
     # plt.imshow(im*1/255.0)
@@ -197,11 +194,23 @@ def predict(image_path):
     im[:, :, 0] -= 103.939
     im[:, :, 1] -= 116.779
     im[:, :, 2] -= 123.68
-    #im = im.transpose((2, 0, 1))
     im = np.expand_dims(im, axis=0)
 
+    model = _load_finetuned_model()
     out = model.predict(im)[0]
     print out
+
+
+def _load_finetuned_model():
+    # Test pretrained model
+    vgg_model = VGG16(weights=None, include_top=False, input_tensor=Input(shape=(img_width, img_height, 3)))
+    top_model = create_top_model(vgg_model.output_shape[1:])
+    out = create_top_model_layers(vgg_model.output, top_model.layers)
+    # print out.output
+    model = Model(vgg_model.input, out)
+    model.load_weights(finetuned_model_weights_path)
+    return model
+
 
 if __name__ == "__main__":
     import dataset
@@ -232,6 +241,14 @@ if __name__ == "__main__":
             train_top_model(y_train, y_val)
         elif cmd == 'finetune':
             finetune_top_model(train_dir, validation_dir)
+    elif cmd == 'test':
+        test_dir = sys.argv[2]
+        X_test, y_test, _ = dataset.dataset(test_dir, img_width, img_height, preprocess_input)
+        model = _load_finetuned_model()
+
+        res = model.predict(X_test, verbose=True)
+        res = map(lambda i: int(np.round(i)), res)
+        print res - y_test
     elif cmd == 'pred':
         image_path = sys.argv[2]
         predict(image_path)
